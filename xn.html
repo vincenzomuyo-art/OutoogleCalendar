@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unisci Calendari · Outlook + Google</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        body {
+            background: #f0f4fc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 1300px;
+            width: 100%;
+        }
+        .card {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 2.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0,10,30,0.12);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        h1 {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 600;
+            font-size: 2rem;
+            color: #0b1e3a;
+            margin-bottom: 0.2rem;
+        }
+        h1 i {
+            background: linear-gradient(135deg, #0b57d0, #1a73e8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            color: #2c3f66;
+            margin-left: 0.5rem;
+            font-weight: 400;
+            font-size: 1rem;
+            border-left: 2px solid #a0b9d6;
+            padding-left: 1rem;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1.5rem 0 1.8rem 0;
+            gap: 1rem;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+        .btn {
+            background: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            border: 1px solid #d9e1ed;
+            cursor: pointer;
+            transition: 0.15s;
+            color: #1a2b4a;
+        }
+        .btn i { font-size: 1.1rem; }
+        .btn-outlook { background: #e5f0ff; border-color: #8bb3e0; }
+        .btn-outlook i { color: #0072C6; }
+        .btn-google { background: #fde8e7; border-color: #f5b7b2; }
+        .btn-google i { color: #EA4335; }
+        .btn-primary {
+            background: #1a5bb5;
+            border-color: #1a5bb5;
+            color: white;
+            box-shadow: 0 6px 14px rgba(26,91,181,0.25);
+        }
+        .btn-primary i { color: white; }
+        .btn-primary:hover { background: #134b97; }
+        .btn-success {
+            background: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover { background: #218838; }
+        .btn-danger {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        .btn-danger:hover { background: #bb2d3b; }
+        .btn-secondary {
+            background: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+        .status-box {
+            background: #e8eef9;
+            border-radius: 60px;
+            padding: 0.4rem 1.2rem;
+            font-size: 0.8rem;
+            color: #1d3d6b;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .status-box i { font-size: 0.7rem; }
+        .status-connected { background: #dff0d8; color: #1d6b3a; }
+        .status-connected i { color: #28a745; }
+        .status-partial { background: #fff3cd; color: #856404; }
+        .status-partial i { color: #ffc107; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.2fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 950px) { .grid { grid-template-columns: 1fr; } }
+
+        .panel {
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(4px);
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.2rem 1.5rem;
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+        .panel h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            font-size: 1rem;
+            color: #1b2f4e;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            padding-bottom: 0.5rem;
+        }
+        .panel h3 i { font-size: 1.1rem; }
+        .panel .count {
+            margin-left: auto;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.05);
+            padding: 0.15rem 0.7rem;
+            border-radius: 20px;
+            color: #4d6587;
+        }
+
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 0.3rem;
+        }
+        .event-list::-webkit-scrollbar { width: 4px; }
+        .event-list::-webkit-scrollbar-thumb { background: #b0c8e5; border-radius: 10px; }
+
+        .event-item {
+            background: rgba(255,255,255,0.7);
+            padding: 0.6rem 0.8rem;
+            border-radius: 14px;
+            border-left: 4px solid #7f9bc0;
+            font-size: 0.85rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.3rem 0.7rem;
+        }
+        .event-item .source {
+            font-weight: 500;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            opacity: 0.7;
+        }
+        .event-item .time { font-weight: 500; color: #1f3b66; }
+        .event-item .title { font-weight: 450; }
+        .outlook-border { border-left-color: #0072C6; }
+        .google-border { border-left-color: #EA4335; }
+        .empty { color: #6b7f9e; padding: 0.8rem 0; font-style: italic; }
+
+        .unified-list .event-item { border-left-width: 6px; }
+
+        .footer-note {
+            margin-top: 2rem;
+            text-align: center;
+            color: #4d6587;
+            font-size: 0.75rem;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            padding-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem 2rem;
+        }
+        .badge {
+            background: white;
+            padding: 0.2rem 0.9rem;
+            border-radius: 30px;
+            border: 1px solid #dce4ef;
+            font-size: 0.75rem;
+        }
+
+        /* Modal per configurazione */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 2rem;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+        }
+        .modal h2 {
+            margin-bottom: 1.5rem;
+            color: #0b1e3a;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .modal h2 i { color: #1a5bb5; }
+        .modal .close-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7f9e;
+        }
+        .modal .close-btn:hover { color: #1a2b4a; }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            color: #1a2b4a;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1px solid #d9e1ed;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: 0.15s;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #1a5bb5;
+            box-shadow: 0 0 0 3px rgba(26,91,181,0.1);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+        .form-group .hint {
+            font-size: 0.8rem;
+            color: #6b7f9e;
+            margin-top: 0.3rem;
+        }
+        .form-group .hint i { margin-right: 0.3rem; }
+        .instructions {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-left: 4px solid #1a5bb5;
+        }
+        .instructions h4 {
+            color: #0b1e3a;
+            margin-bottom: 0.5rem;
+        }
+        .instructions ol {
+            padding-left: 1.2rem;
+            color: #2c3f66;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .instructions ol li { margin-bottom: 0.3rem; }
+        .btn-row {
+            display: flex;
+            gap: 0.7rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #1a5bb5;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .config-status {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .config-status.success { background: #d4edda; color: #155724; }
+        .config-status.error { background: #f8d7da; color: #721c24; }
+        .config-status.info { background: #d1ecf1; color: #0c5460; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.5rem 1.5rem;">
+            <h1><i class="fas fa-calendar-check"></i> Agenda Unita <span class="sub">Outlook + Google</span></h1>
+            <span class="status-box" id="statusBox"><i class="fas fa-circle"></i> Non connesso</span>
+        </div>
+
+        <div class="toolbar">
+            <div class="btn-group">
+                <button class="btn btn-outlook" id="btnOutlook"><i class="fas fa-envelope"></i> Outlook</button>
+                <button class="btn btn-google" id="btnGoogle"><i class="fab fa-google"></i> Google</button>
+                <button class="btn btn-primary" id="btnRefresh"><i class="fas fa-sync"></i> Aggiorna</button>
+                <button class="btn btn-success" id="btnConfig"><i class="fas fa-cog"></i> Configura</button>
+                <button class="btn btn-danger" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+                <span class="badge"><i class="fas fa-circle" style="color:#0072C6;font-size:0.5rem;"></i> Outlook</span>
+                <span class="badge"><i class="fas fa-circle" style="color:#EA4335;font-size:0.5rem;"></i> Google</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h3><i class="fas fa-envelope" style="color:#0072C6;"></i> Outlook <span class="count" id="outlookCount">0</span></h3>
+                <div class="event-list" id="outlookList"><div class="empty">Clicca su "Outlook" per connetterti</div></div>
+            </div>
+            <div class="panel">
+                <h3><i class="fab fa-google" style="color:#EA4335;"></i> Google <span class="count" id="googleCount">0</span></h3>
+                <div class="event-list" id="googleList"><div class="empty">Clicca su "Google" per connetterti</div></div>
+            </div>
+            <div class="panel" style="background:rgba(235,242,255,0.5); border-color:#a0bde0;">
+                <h3><i class="fas fa-layer-group" style="color:#1f5f9e;"></i> Unificato <span class="count" id="unifiedCount">0</span></h3>
+                <div class="event-list unified-list" id="unifiedList"><div class="empty">Connetti i calendari per vedere gli eventi</div></div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            <span><i class="fas fa-lock"></i> OAuth2 reale · I token sono gestiti in sessione</span>
+            <span><i class="fas fa-calendar-alt"></i> Eventi dei prossimi 7 giorni</span>
+            <span><i class="fas fa-key"></i> Clicca su "Configura" per inserire le tue credenziali</span>
+        </div>
+    </div>
+</div>
+
+<!-- MODALE CONFIGURAZIONE -->
+<div class="modal-overlay" id="configModal">
+    <div class="modal">
+        <h2>
+            <i class="fas fa-key"></i> Configurazione API
+            <button class="close-btn" id="closeModal">&times;</button>
+        </h2>
+
+        <div id="configStatus" class="config-status info">
+            <i class="fas fa-info-circle"></i> Inserisci le tue credenziali per connetterti ai servizi
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-envelope" style="color:#0072C6;"></i> Outlook Client ID</label>
+            <input type="text" id="outlookClientId" placeholder="Inserisci il Client ID di Outlook (Azure AD)" />
+            <div class="hint"><i class="fas fa-info-circle"></i> Ottienilo dal portale Azure AD → Registrazioni app</div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fab fa-google" style="color:#EA4335;"></i> Google Client ID</label>
+            <input type="text" id="googleClientId" placeholder="Inserisci il Client ID di Google" />
+            <div class="hint"><i class="fas fa-info-circle"></i> Ottienilo da Google Cloud Console → Credenziali</div>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-key" style="color:#EA4335;"></i> Google API Key</label>
+            <input type="text" id="googleApiKey" placeholder="Inserisci l'API Key di Google" />
+            <div class="hint"><i class="fas fa-info-circle"></i> Necessaria per alcune API Google (opzionale)</div>
+        </div>
+
+        <details class="instructions">
+            <summary style="cursor:pointer; font-weight:500; color:#1a5bb5;">
+                <i class="fas fa-book"></i> Istruzioni dettagliate per ottenere le credenziali
+            </summary>
+            <div style="margin-top:0.8rem;">
+                <h4>🔵 Per Outlook (Microsoft Graph):</h4>
+                <ol>
+                    <li>Vai su <a href="https://portal.azure.com/" target="_blank">Azure Portal</a> → Azure Active Directory</li>
+                    <li>Clicca su <strong>Registrazioni app</strong> → <strong>Nuova registrazione</strong></li>
+                    <li>Nome: <em>Agenda Unita</em> (o quello che preferisci)</li>
+                    <li>Tipi di account supportati: <strong>Account in qualsiasi directory</strong></li>
+                    <li>URI di reindirizzamento: <code id="redirectUriOutlook" style="background:#f0f0f0;padding:0.1rem 0.4rem;border-radius:4px;"></code></li>
+                    <li>Clicca su <strong>Registra</strong> e copia il <strong>ID applicazione (client)</strong></li>
+                    <li>Vai su <strong>Permessi API</strong> → <strong>Aggiungi un permesso</strong> → <strong>Microsoft Graph</strong> → <strong>Permessi delegati</strong></li>
+                    <li>Cerca e seleziona <strong>Calendars.Read</strong> e <strong>Calendars.Read.Shared</strong></li>
+                    <li>Clicca su <strong>Concedi il consenso amministratore</strong></li>
+                </ol>
+
+                <h4 style="margin-top:1rem;">🔴 Per Google Calendar:</h4>
+                <ol>
+                    <li>Vai su <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                    <li>Crea un nuovo progetto o selezionane uno esistente</li>
+                    <li>Vai su <strong>API e servizi</strong> → <strong>Libreria</strong> → cerca <strong>Google Calendar API</strong> e abilitala</li>
+                    <li>Vai su <strong>Credenziali</strong> → <strong>Crea credenziali</strong> → <strong>ID client OAuth</strong></li>
+                    <li>Tipo applicazione: <strong>Applicazione web</strong></li>
+                    <li>Nome: <em>Agenda Unita</em></li>
+                    <li>URI di reindirizzamento autorizzati: <code id="redirectUriGoogle" style="background:#f0f0f0;padding:0.1rem 0.4rem;border-radius:4px;"></code></li>
+                    <li>Copia il <strong>Client ID</strong> e l'<strong>API Key</strong> (se necessaria)</li>
+                </ol>
+                <div style="margin-top:0.8rem; padding:0.5rem; background:#fff3cd; border-radius:8px; font-size:0.85rem;">
+                    <i class="fas fa-exclamation-triangle" style="color:#856404;"></i>
+                    <strong>Nota:</strong> Assicurati che gli URI di reindirizzamento corrispondano esattamente all'URL di questa pagina.
+                </div>
+            </div>
+        </details>
+
+        <div class="btn-row">
+            <button class="btn btn-primary" id="saveConfig"><i class="fas fa-save"></i> Salva e Connetti</button>
+            <button class="btn btn-secondary" id="clearConfig"><i class="fas fa-eraser"></i> Cancella tutto</button>
+            <button class="btn btn-secondary" id="cancelConfig">Annulla</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // ============================================================
+        //  STATO DELL'APPLICAZIONE
+        // ============================================================
+        let outlookEvents = [];
+        let googleEvents = [];
+        let outlookToken = null;
+        let googleToken = null;
+        let outlookConnected = false;
+        let googleConnected = false;
+
+        // Configurazione caricata da localStorage
+        let config = {
+            outlookClientId: localStorage.getItem('outlookClientId') || '',
+            googleClientId: localStorage.getItem('googleClientId') || '',
+            googleApiKey: localStorage.getItem('googleApiKey') || '',
+        };
+
+        // Elementi DOM
+        const outlookListEl = document.getElementById('outlookList');
+        const googleListEl = document.getElementById('googleList');
+        const unifiedListEl = document.getElementById('unifiedList');
+        const statusBox = document.getElementById('statusBox');
+        const outlookCount = document.getElementById('outlookCount');
+        const googleCount = document.getElementById('googleCount');
+        const unifiedCount = document.getElementById('unifiedCount');
+
+        const btnOutlook = document.getElementById('btnOutlook');
+        const btnGoogle = document.getElementById('btnGoogle');
+        const btnRefresh = document.getElementById('btnRefresh');
+        const btnLogout = document.getElementById('btnLogout');
+        const btnConfig = document.getElementById('btnConfig');
+
+        // Elementi modale
+        const modal = document.getElementById('configModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelConfig = document.getElementById('cancelConfig');
+        const saveConfig = document.getElementById('saveConfig');
+        const clearConfig = document.getElementById('clearConfig');
+        const outlookClientIdInput = document.getElementById('outlookClientId');
+        const googleClientIdInput = document.getElementById('googleClientId');
+        const googleApiKeyInput = document.getElementById('googleApiKey');
+        const configStatus = document.getElementById('configStatus');
+
+        // URI di reindirizzamento
+        const redirectUri = window.location.origin + window.location.pathname;
+        document.getElementById('redirectUriOutlook').textContent = redirectUri;
+        document.getElementById('redirectUriGoogle').textContent = redirectUri;
+
+        // ============================================================
+        //  UTILITY
+        // ============================================================
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('it-IT', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function renderList(container, events, emptyMsg = 'Nessun evento') {
+            if (!events || events.length === 0) {
+                container.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+                return;
+            }
+            const sorted = [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
+            let html = '';
+            sorted.forEach(ev => {
+                const borderClass = ev.source === 'outlook' ? 'outlook-border' : 'google-border';
+                const icon = ev.source === 'outlook' ? 'fa-envelope' : 'fa-google';
+                const timeStr = ev.start ? formatDate(ev.start) : '--';
+                html += `
+                    <div class="event-item ${borderClass}">
+                        <span class="source"><i class="fas ${icon}"></i> ${ev.source}</span>
+                        <span class="time">${timeStr}</span>
+                        <span class="title">${ev.title || 'Evento'}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function updateAll() {
+            renderList(outlookListEl, outlookEvents, 'Nessun evento Outlook');
+            renderList(googleListEl, googleEvents, 'Nessun evento Google');
+
+            const all = [...outlookEvents, ...googleEvents];
+            renderList(unifiedListEl, all, 'Connetti i calendari per vedere gli eventi');
+
+            outlookCount.textContent = outlookEvents.length;
+            googleCount.textContent = googleEvents.length;
+            unifiedCount.textContent = all.length;
+
+            updateStatus();
+        }
+
+        function updateStatus() {
+            let msg = '';
+            let cls = '';
+            if (outlookConnected && googleConnected) {
+                msg = '✅ Outlook + Google connessi';
+                cls = 'status-connected';
+            } else if (outlookConnected) {
+                msg = '🔵 Outlook connesso · Google in attesa';
+                cls = 'status-partial';
+            } else if (googleConnected) {
+                msg = '🔴 Google connesso · Outlook in attesa';
+                cls = 'status-partial';
+            } else {
+                msg = '⭕ Non connesso';
+                cls = '';
+            }
+            statusBox.className = 'status-box ' + cls;
+            statusBox.innerHTML = `<i class="fas fa-circle"></i> ${msg}`;
+        }
+
+        function setConfigStatus(message, type = 'info') {
+            configStatus.className = 'config-status ' + type;
+            configStatus.innerHTML = message;
+            setTimeout(() => {
+                if (configStatus.className.includes('success') || configStatus.className.includes('error')) {
+                    setTimeout(() => {
+                        configStatus.className = 'config-status info';
+                        configStatus.innerHTML = '<i class="fas fa-info-circle"></i> Le tue credenziali sono state salvate';
+                    }, 5000);
+                }
+            }, 100);
+        }
+
+        // ============================================================
+        //  GESTIONE CONFIGURAZIONE
+        // ============================================================
+        function loadConfigFromStorage() {
+            outlookClientIdInput.value = config.outlookClientId || '';
+            googleClientIdInput.value = config.googleClientId || '';
+            googleApiKeyInput.value = config.googleApiKey || '';
+        }
+
+        function saveConfigToStorage() {
+            config.outlookClientId = outlookClientIdInput.value.trim();
+            config.googleClientId = googleClientIdInput.value.trim();
+            config.googleApiKey = googleApiKeyInput.value.trim();
+
+            localStorage.setItem('outlookClientId', config.outlookClientId);
+            localStorage.setItem('googleClientId', config.googleClientId);
+            localStorage.setItem('googleApiKey', config.googleApiKey);
+
+            setConfigStatus('✅ Credenziali salvate con successo!', 'success');
+        }
+
+        function clearAllConfig() {
+            localStorage.removeItem('outlookClientId');
+            localStorage.removeItem('googleClientId');
+            localStorage.removeItem('googleApiKey');
+            config.outlookClientId = '';
+            config.googleClientId = '';
+            config.googleApiKey = '';
+            outlookClientIdInput.value = '';
+            googleClientIdInput.value = '';
+            googleApiKeyInput.value = '';
+            setConfigStatus('🗑️ Credenziali cancellate', 'info');
+            // Logout automatico
+            logout();
+        }
+
+        // ============================================================
+        //  OUTLOOK (Microsoft Graph)
+        // ============================================================
+        async function connectOutlook() {
+            if (outlookConnected) {
+                await fetchOutlookEvents();
+                return;
+            }
+
+            if (!config.outlookClientId) {
+                alert('⚠️ Inserisci il Client ID di Outlook nel pulsante "Configura"');
+                return;
+            }
+
+            try {
+                const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+                authUrl.searchParams.append('client_id', config.outlookClientId);
+                authUrl.searchParams.append('response_type', 'token');
+                authUrl.searchParams.append('redirect_uri', redirectUri);
+                authUrl.searchParams.append('scope', 'https://graph.microsoft.com/Calendars.Read');
+                authUrl.searchParams.append('response_mode', 'fragment');
+
+                window.location.href = authUrl.toString();
+            } catch (err) {
+                console.error('Errore Outlook:', err);
+                alert('Errore durante la connessione a Outlook');
+            }
+        }
+
+        async function fetchOutlookEvents() {
+            if (!outlookToken) return;
+
+            try {
+                const now = new Date();
+                const startDate = now.toISOString();
+                const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+                const response = await fetch(
+                    `https://graph.microsoft.com/v1.0/me/calendarview?startdatetime=${startDate}&enddatetime=${endDate}&$select=subject,start,end&$orderby=start/dateTime`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${outlookToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        outlookToken = null;
+                        outlookConnected = false;
+                        outlookEvents = [];
+                        updateAll();
+                        alert('Sessione Outlook scaduta. Riconnettiti.');
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                outlookEvents = (data.value || []).map(ev => ({
+                    title: ev.subject || 'Evento Outlook',
+                    start: ev.start?.dateTime || ev.start?.date,
+                    source: 'outlook'
+                }));
+                outlookConnected = true;
+                updateAll();
+            } catch (err) {
+                console.error('Errore fetch Outlook:', err);
+                alert('Errore nel caricamento degli eventi Outlook');
+            }
+        }
+
+        // ============================================================
+        //  GOOGLE CALENDAR
+        // ============================================================
+        async function connectGoogle() {
+            if (googleConnected) {
+                await fetchGoogleEvents();
+                return;
+            }
+
+            if (!config.googleClientId) {
+                alert('⚠️ Inserisci il Client ID di Google nel pulsante "Configura"');
+                return;
+            }
+
+            try {
+                if (typeof google === 'undefined') {
+                    await loadGoogleScript();
+                }
+
+                const client = google.accounts.oauth2.initTokenClient({
+                    client_id: config.googleClientId,
+                    scope: 'https://www.googleapis.com/auth/calendar.readonly',
+                    callback: async (tokenResponse) => {
+                        if (tokenResponse.error) {
+                            console.error('Errore Google:', tokenResponse);
+                            alert('Errore autenticazione Google');
+                            return;
+                        }
+                        googleToken = tokenResponse.access_token;
+                        googleConnected = true;
+                        await fetchGoogleEvents();
+                        updateAll();
+                    }
+                });
+
+                client.requestAccessToken();
+            } catch (err) {
+                console.error('Errore Google:', err);
+                alert('Errore durante la connessione a Google');
+            }
+        }
+
+        function loadGoogleScript() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        async function fetchGoogleEvents() {
+            if (!googleToken) return;
+
+            try {
+                const now = new Date();
+                const timeMin = now.toISOString();
+                const timeMax = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+                const response = await fetch(
+                    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${googleToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        googleToken = null;
+                        googleConnected = false;
+                        googleEvents = [];
+                        updateAll();
+                        alert('Sessione Google scaduta. Riconnettiti.');
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                googleEvents = (data.items || [])
+                    .filter(ev => ev.status !== 'cancelled')
+                    .map(ev => ({
+                        title: ev.summary || 'Evento Google',
+                        start: ev.start?.dateTime || ev.start?.date,
+                        source: 'google'
+                    }));
+                googleConnected = true;
+                updateAll();
+            } catch (err) {
+                console.error('Errore fetch Google:', err);
+                alert('Errore nel caricamento degli eventi Google');
+            }
+        }
+
+        // ============================================================
+        //  GESTIONE TOKEN DA URL (callback OAuth2)
+        // ============================================================
+        function handleTokenCallback() {
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token=')) {
+                const params = new URLSearchParams(hash.substring(1));
+                const token = params.get('access_token');
+                if (token) {
+                    outlookToken = token;
+                    outlookConnected = true;
+                    window.history.replaceState(null, '', window.location.pathname);
+                    fetchOutlookEvents().then(() => updateAll());
+                }
+            }
+        }
+
+        // ============================================================
+        //  LOGOUT
+        // ============================================================
+        function logout() {
+            outlookToken = null;
+            googleToken = null;
+            outlookConnected = false;
+            googleConnected = false;
+            outlookEvents = [];
+            googleEvents = [];
+            updateAll();
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+
+        // ============================================================
+        //  EVENTI BOTTONI
+        // ============================================================
+        btnOutlook.addEventListener('click', connectOutlook);
+        btnGoogle.addEventListener('click', connectGoogle);
+
+        btnRefresh.addEventListener('click', async () => {
+            if (outlookConnected) await fetchOutlookEvents();
+            if (googleConnected) await fetchGoogleEvents();
+            updateAll();
+        });
+
+        btnLogout.addEventListener('click', logout);
+        btnConfig.addEventListener('click', () => {
+            loadConfigFromStorage();
+            modal.classList.add('active');
+        });
+
+        closeModal.addEventListener('click', () => modal.classList.remove('active'));
+        cancelConfig.addEventListener('click', () => modal.classList.remove('active'));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+
+        saveConfig.addEventListener('click', () => {
+            saveConfigToStorage();
+            // Prova a connettere se le credenziali sono valide
+            if (config.outlookClientId) {
+                setConfigStatus('🔵 Tentativo connessione Outlook...', 'info');
+                connectOutlook();
+            }
+            if (config.googleClientId) {
+                setConfigStatus('🔴 Tentativo connessione Google...', 'info');
+                connectGoogle();
+            }
+            setTimeout(() => {
+                modal.classList.remove('active');
+            }, 500);
+        });
+
+        clearConfig.addEventListener('click', () => {
+            if (confirm('Cancellare tutte le credenziali salvate?')) {
+                clearAllConfig();
+            }
+        });
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        handleTokenCallback();
+
+        // Carica Google SDK se necessario
+        if (typeof google === 'undefined') {
+            loadGoogleScript().catch(err => console.warn('Google SDK non caricato', err));
+        }
+
+        updateAll();
+
+        console.log('✅ Agenda Unita · OAuth2 reale con configurazione UI');
+        console.log('ℹ️ Outlook Client ID:', config.outlookClientId ? 'configurato' : 'mancante');
+        console.log('ℹ️ Google Client ID:', config.googleClientId ? 'configurato' : 'mancante');
+    })();
+</script>
+</body>
+</html>
